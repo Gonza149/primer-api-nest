@@ -2,4 +2,4 @@
 /dist
 /node_modules
 /build
-/mysql/mysql.sock
+/mysql
