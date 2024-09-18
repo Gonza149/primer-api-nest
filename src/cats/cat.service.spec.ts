@@ -1,9 +1,9 @@
 import { CatsService } from "./cats.service";
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule, getRepositoryToken } from "@nestjs/typeorm";
+import { getRepositoryToken } from "@nestjs/typeorm";
 import { Cat } from "./entities/cat.entity";
 import { Breed } from '../breeds/entities/breed.entity';
-import { DataSource, Repository } from "typeorm";
+import { Repository } from "typeorm";
 
 
 
@@ -38,6 +38,11 @@ describe('catsService', ()=>{
     it("Servicios de Cat", () => {
         expect(catsService).toBeDefined();
     });
+
+    it("Debería retornar lista de gatitis", () => {
+
+    
+    })
 
 });
 
