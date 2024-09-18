@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { IsInt, IsOptional, IsPositive, IsString, MinLength } from 'class-validator';
-import { Breed } from 'src/breeds/entities/breed.entity';
+import { Breed } from '../../breeds/entities/breed.entity';
 import { CreateCatDto } from './create-cat.dto';
 
 export class UpdateCatDto {  
