@@ -58,10 +58,17 @@ describe('catsService', ()=>{
             providers: [
                 CatsService,
                 {provide: getRepositoryToken(Cat),
-                useValue: mockCatsService,
+                useValue: {
+                  mockCatsService,
+                  findOneBy: jest.fn(),
+                  save: jest.fn(),
+                },
                 },
                 {provide: getRepositoryToken(Breed),
-                useValue: mockBreedService,
+                useValue: {
+                  mockBreedService,
+                  findOneBy: jest.fn(),
+                },
                 },
             ],
         }).compile();
@@ -76,18 +83,79 @@ describe('catsService', ()=>{
         expect(catsService).toBeDefined();
     });
 
-    describe("findAll", () => {
-        it("Debería listar lista de gatitis", async () => {
+
+    it("Debería listar lista de gatitis", async () => {
     
-            jest.spyOn(catsService,'findAll').mockResolvedValue(mockCats);
+        jest.spyOn(catsService,'findAll').mockResolvedValue(mockCats);
 
-            const resultado = await catsService.findAll();
+        const resultado = await catsService.findAll();
 
-            expect(resultado).toEqual(mockCats);
-            expect(catsService.findAll).toHaveBeenCalled();
-        });
+        expect(resultado).toEqual(mockCats);
+        expect(catsService.findAll).toHaveBeenCalled();
     });
     
+
+    it("Debería mostrar solamente un objeto a partir del Id dado", async () => {
+
+      const mockGato = {
+        id: 2,
+        nombre: "Miaufasa",
+        edad: 5,
+        borradoEl: null,
+        raza: {
+          id: 2,
+          nombre: "Bengala",
+          gatos: null
+        }
+      };
+
+      jest.spyOn(catRepository,"findOneBy").mockResolvedValue(mockGato);
+
+      const resultado = await catsService.findOne(2);
+
+      expect(resultado).toEqual(mockGato);
+      expect(catRepository.findOneBy).toHaveBeenCalledWith({id: 2});
+    });
+
+    it(" El resultado debería ser null cuando no encuentra el gato", async () => {
+        
+      jest.spyOn(catRepository, "findOneBy").mockResolvedValue(null);
+
+      const resultado = await catsService.findOne(3);
+
+      expect(resultado).toBeNull();
+      expect(catRepository.findOneBy).toHaveBeenCalledWith({id: 3});
+    });
+
+    it("Debería crear un gato con una raza asociada y guardarlo", async () => {
+      const createCatDto = {
+        nombre: "Teodoro",
+        edad: 8,
+        raza: "Egipcio",
+      };
+
+      const mockRaza = {
+        id: 1,
+        nombre: "Egipcio",
+        gatos: null,
+      };
+
+      const mockGato = {...createCatDto, 
+        id: 1, 
+        raza: mockRaza,
+        borradoEl: null,
+      };
+
+      jest.spyOn(breedRepository, "findOneBy").mockResolvedValue(mockRaza);
+      jest.spyOn(catRepository, "save").mockResolvedValue(mockGato);
+
+      const resultado = await catsService.create(createCatDto);
+
+      expect(resultado).toEqual(mockGato);
+      expect(breedRepository.findOneBy).toHaveBeenCalledWith({nombre: "Egipcio"});
+      expect(catRepository.save).toHaveBeenCalledWith({...createCatDto, raza: mockRaza});
+
+    });
 });
 
 
