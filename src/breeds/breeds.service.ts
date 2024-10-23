@@ -22,14 +22,14 @@ export class BreedsService {
   }
 
   async findOne(id: number) {
-    return `This action returns a #${id} breed`;
+    return await this.breedRepository.findOneBy({ id });
   }
 
   async update(id: number, updateBreedDto: UpdateBreedDto) {
-    return `This action updates a #${id} breed`;
+    return await this.breedRepository.update(id, updateBreedDto);
   }
 
   async remove(id: number) {
-    return `This action removes a #${id} breed`;
+    return await this.breedRepository.softDelete({ id });
   }
 }
