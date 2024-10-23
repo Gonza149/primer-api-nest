@@ -1,11 +1,13 @@
 import { CatsService } from "./cats.service";
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from "@nestjs/typeorm";
+import { getRepositoryToken, TypeOrmModule } from "@nestjs/typeorm";
 import { Cat } from "./entities/cat.entity";
 import { Breed } from '../breeds/entities/breed.entity';
 import { Repository } from "typeorm";
 import { CatsController } from "./cats.controller";
-
+import { CatsModule } from "./cats.module";
+import { BreedsModule } from "../breeds/breeds.module";
+import { BreedsService } from "../breeds/breeds.service";
 
 
 const mockCatsService = {};
@@ -157,6 +159,175 @@ describe('catsService', ()=>{
 
     });
 });
+
+
+describe('Integración entre Cat y Breed', () => {
+  let app: TestingModule;
+
+  beforeAll(async () => {
+    app = await Test.createTestingModule({
+      imports: [
+        CatsModule, 
+        BreedsModule,
+        TypeOrmModule.forRoot({
+          type: 'mysql',
+          host: 'localhost',
+          port: 3306,
+          username: 'gonzalo',
+          password: 'root',
+          database: 'db_crud',
+          autoLoadEntities: true,
+          synchronize: true,
+        }),
+        CatsModule,
+        BreedsModule
+      ],
+    }).compile();
+  });
+
+  it('Debería crear un gato junto con la raza', async () => {
+    const catsService = app.get(CatsService);
+    const breedsService = app.get(BreedsService);
+
+    const breed = await breedsService.create({ 
+      nombre: 'Siames' 
+    });
+    
+    const gato = await catsService.create({
+      nombre: 'Felix', 
+      raza: 'Siames', 
+      edad: 2
+    });
+
+    expect(gato).toBeDefined();
+    expect(gato.raza.nombre).toEqual('Siames');
+  });
+
+
+  it('Debería actualizar los datos del gatito', async () => {
+    const catsService = app.get(CatsService);
+    const breedsService = app.get(BreedsService);
+  
+    const raza = await breedsService.create({ 
+      nombre: 'Siames' 
+    });
+  
+    const gato = await catsService.create({
+      nombre: 'Felix',
+      raza: 'Siames',
+      edad: 2,
+    });
+  
+    expect(gato).toBeDefined();
+    expect(gato.raza.nombre).toEqual('Siames');
+  
+    const gatoActualizado = { 
+      nombre: 'Sancho Panza', 
+      edad: 10 };
+      
+    await catsService.update(gato.id, gatoActualizado);
+  
+    const datosGatoActualizado = await catsService.findOne(gato.id);
+  
+    expect(datosGatoActualizado).toBeDefined();
+    expect(datosGatoActualizado.nombre).toEqual('Sancho Panza');
+    expect(datosGatoActualizado.edad).toEqual(10);
+  });
+  
+  it('Debería borrar un gato y verificar que no existe', async () => {
+    const catsService = app.get(CatsService);
+    const breedsService = app.get(BreedsService);
+
+    const breed = await breedsService.create({ 
+      nombre: 'Siames' 
+    });
+  
+    const gato = await catsService.create({
+      nombre: 'Felix',
+      raza: 'Siames',
+      edad: 2,
+    });
+  
+    expect(gato).toBeDefined();
+    
+    await catsService.remove(gato.id);
+  
+    const gatoBorrado = await catsService.findOne(gato.id);
+  
+    expect(gatoBorrado).toBeNull();
+  });
+  
+  it('Debería listar todos los gatos', async () => {
+    const catsService = app.get(CatsService);
+    const breedsService = app.get(BreedsService);
+
+    const raza1 = await breedsService.create({ 
+      nombre: 'Montes' 
+    });
+  
+    const raza2 = await breedsService.create({ 
+      nombre: 'Egipcio' 
+    });
+
+    await catsService.create({
+      nombre: 'Matias Rodriguez',
+      raza: 'Montes',
+      edad: 12,
+    });
+
+    await catsService.create({
+      nombre: 'Salchicha',
+      raza: 'Egipcio',
+      edad: 9,
+    });
+    await catsService.create({
+      nombre: 'Preguntale',
+      raza: 'Egipcio',
+      edad: 1,
+    });
+  
+    const gatos = await catsService.findAll();
+  
+    expect(gatos).toBeDefined();
+    expect(gatos.length).toBeGreaterThan(0);
+    expect(gatos).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ nombre: 'Matias Rodriguez' }),
+        expect.objectContaining({ nombre: 'Salchicha' }),
+        expect.objectContaining({ nombre: 'Preguntale' }),
+      ])
+    );
+  });
+  
+  it('Debería buscar y encontrar un gato por id y verificar la relación con la raza', async () => {
+    const catsService = app.get(CatsService);
+    const breedsService = app.get(BreedsService);
+    
+    const raza1 = await breedsService.create({ 
+      nombre: 'Persa' 
+    });
+  
+    const gato = await catsService.create({
+      nombre: 'Manchita',
+      raza: 'Persa',
+      edad: 8,  
+    });
+  
+    const gatoEncontrado = await catsService.findOne(gato.id);
+  
+    expect(gatoEncontrado).toBeDefined();
+    expect(gatoEncontrado.raza.nombre).toEqual(raza1.nombre);
+    expect(gatoEncontrado.nombre).toEqual(gato.nombre);
+    expect(gatoEncontrado.edad).toEqual(gato.edad);
+  });
+  
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+});
+
 
 
 
